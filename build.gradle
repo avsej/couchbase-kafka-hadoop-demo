@@ -1,0 +1,43 @@
+// -*- mode: groovy; -*-
+
+apply plugin: 'java'
+apply plugin: 'idea'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.0'
+    }
+}
+apply plugin: 'com.github.johnrengelman.shadow'
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = "1.8"
+    targetCompatibility = "1.8"
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+
+version = '1.0'
+
+repositories {
+    mavenCentral()
+    maven { url { "http://repo.hortonworks.com/content/repositories/releases" } }
+}
+
+dependencies {
+    compile(group: 'com.couchbase.client', name: 'core-io', version: '1.1.0')
+    compile(group: 'org.slf4j', name: 'slf4j-simple', version: '1.6.1')
+    compile(group: 'org.apache.kafka', name: 'kafka_2.10', version: '0.8.1.1') {
+        exclude(module: 'jms')
+        exclude(module: 'jmxtools')
+        exclude(module: 'jmxri')
+    }
+}
