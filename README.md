@@ -19,4 +19,5 @@ Compile jar file:
 Execute demo application, which listens all changes in default bucket
 and posts corresponding messages in kafka.
 
-    java -cp build/libs/couchbase-kafka-hadoop-demo-1.0-all.jar example.ClickStreamExample
+    java -cp build/libs/couchbase-kafka-hadoop-demo-1.0-all.jar example.ClickStreamProducer
+    java -cp build/libs/couchbase-kafka-hadoop-demo-1.0-all.jar example.ClickStreamConsumer

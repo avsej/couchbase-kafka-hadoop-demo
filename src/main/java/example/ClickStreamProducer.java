@@ -36,13 +36,12 @@ import java.util.List;
 /**
  * @author Sergey Avseyev
  */
-public class ClickStreamExample {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ClickStreamExample.class);
+public class ClickStreamProducer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClickStreamProducer.class);
 
     private static String couchbaseBucket;
     private static List<String> couchbaseNodes;
     private static String kafkaTopic;
-    private static String kafkaNodes;
     private static String kafkaZookeeper;
 
     public static void main(String[] args) {
@@ -56,32 +55,19 @@ public class ClickStreamExample {
         try {
             InputStream config;
             if (args.length == 0) {
-                config = ClickStreamExample.class.getResourceAsStream("/click_stream_example.properties");
+                config = ClickStreamProducer.class.getResourceAsStream("/click_stream_example.properties");
             } else {
                 config = new FileInputStream(new File(args[0]));
             }
             if (config != null) {
                 System.getProperties().load(config);
-                couchbaseBucket = stringPropertyOr("couchbaseBucket", "default");
-                couchbaseNodes = splitNodes(stringPropertyOr("couchbaseNodes", "localhost"));
-                kafkaTopic = stringPropertyOr("kafkaTopic", "default");
-                kafkaZookeeper = stringPropertyOr("kafkaZookeeper", "localhost:2181");
+                couchbaseBucket = Util.stringPropertyOr("couchbaseBucket", "default");
+                couchbaseNodes = Util.splitNodes(Util.stringPropertyOr("couchbaseNodes", "localhost"));
+                kafkaTopic = Util.stringPropertyOr("kafkaTopic", "default");
+                kafkaZookeeper = Util.stringPropertyOr("kafkaZookeeper", "localhost:2181");
             }
         } catch (IOException ex) {
             LOGGER.debug("Cannot load configuration", ex);
-        }
-    }
-
-    private static String stringPropertyOr(String path, String def) {
-        String found = System.getProperty("example." + path);
-        return found == null ? def : found;
-    }
-
-    private static List<String> splitNodes(final String nodes) {
-        if (nodes == null) {
-            return null;
-        } else {
-            return Arrays.asList(nodes.split(","));
         }
     }
 }
