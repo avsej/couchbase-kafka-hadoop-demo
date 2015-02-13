@@ -25,6 +25,7 @@ package com.couchbase.kafka;
 import com.couchbase.client.core.ClusterFacade;
 import com.couchbase.client.core.CouchbaseCore;
 import com.couchbase.client.core.config.CouchbaseBucketConfig;
+import com.couchbase.client.core.message.CouchbaseResponse;
 import com.couchbase.client.core.message.cluster.GetClusterConfigRequest;
 import com.couchbase.client.core.message.cluster.GetClusterConfigResponse;
 import com.couchbase.client.core.message.cluster.OpenBucketRequest;
@@ -41,6 +42,7 @@ import org.I0Itec.zkclient.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rx.Observable;
+import rx.functions.Action1;
 import rx.functions.Func1;
 import scala.collection.Iterator;
 
@@ -80,10 +82,12 @@ public class CouchbaseProducer implements Runnable {
         Iterator<Broker> brokerIterator = ZkUtils.getAllBrokersInCluster(zkClient).iterator();
         while (brokerIterator.hasNext()) {
             Broker broker = brokerIterator.next();
-            brokerList.add(broker.host() + ":" + broker.port());
+            String brokerAddress = broker.host() + ":" + broker.port();
+            brokerList.add(brokerAddress);
+            LOGGER.info("Found broker: " + brokerAddress);
         }
 
-        props.put("metadata.broker.list", String.join(";", brokerList));
+        props.put("metadata.broker.list", joinNodes(brokerList));
         props.put("serializer.class", env.kafkaValueSerializerClass());
         props.put("key.serializer.class", env.kafkaKeySerializerClass());
         final ProducerConfig producerConfig = new ProducerConfig(props);
@@ -114,10 +118,25 @@ public class CouchbaseProducer implements Runnable {
         String streamName = couchbaseBucket + "->" + kafkaTopic;
         core.send(new OpenConnectionRequest(streamName, couchbaseBucket))
                 .toList()
-                .flatMap(couchbaseResponses -> partitionSize())
-                .flatMap(this::requestStreams)
+                .flatMap(new Func1<List<CouchbaseResponse>, Observable<Integer>>() {
+                    @Override
+                    public Observable<Integer> call(List<CouchbaseResponse> couchbaseResponses) {
+                        return partitionSize();
+                    }
+                })
+                .flatMap(new Func1<Integer, Observable<DCPRequest>>() {
+                    @Override
+                    public Observable<DCPRequest> call(Integer numberOfPartitions) {
+                        return requestStreams(numberOfPartitions);
+                    }
+                })
                 .toBlocking()
-                .forEach(this::postMessage);
+                .forEach(new Action1<DCPRequest>() {
+                    @Override
+                    public void call(DCPRequest dcpRequest) {
+                        postMessage(dcpRequest);
+                    }
+                });
     }
 
     protected void postMessage(DCPRequest request) {
@@ -160,5 +179,19 @@ public class CouchbaseProducer implements Runnable {
                             }
                         })
         );
+    }
+
+    private String joinNodes(List<String> list) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String item : list) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append(";");
+            }
+            sb.append(item);
+        }
+        return sb.toString();
     }
 }

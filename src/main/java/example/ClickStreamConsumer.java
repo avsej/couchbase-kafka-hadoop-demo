@@ -31,7 +31,9 @@ import kafka.message.MessageAndMetadata;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +65,9 @@ public class ClickStreamConsumer {
     private static void run() {
         Configuration conf = new Configuration();
         conf.set("fs.defaultFS", defaultFS);
+        conf.set("fs.hdfs.impl", DistributedFileSystem.class.getName());
+        conf.set("fs.file.impl", LocalFileSystem.class.getName());
+
         FileSystem fs = null;
         try {
             fs = FileSystem.get(conf);
