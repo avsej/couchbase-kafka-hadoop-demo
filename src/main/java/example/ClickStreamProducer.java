@@ -30,7 +30,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -55,7 +54,7 @@ public class ClickStreamProducer {
         try {
             InputStream config;
             if (args.length == 0) {
-                config = ClickStreamProducer.class.getResourceAsStream("/click_stream_example.properties");
+                config = ClickStreamProducer.class.getClassLoader().getResourceAsStream("click_stream_example.properties");
             } else {
                 config = new FileInputStream(new File(args[0]));
             }
